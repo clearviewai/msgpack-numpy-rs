@@ -3,4 +3,4 @@
 mod core;
 mod serde;
 
-pub use core::{NDArray, Scalar};
+pub use core::{CowNDArray, NDArray, Scalar};

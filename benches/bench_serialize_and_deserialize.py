@@ -37,6 +37,10 @@ if __name__ == "__main__":
     # arr = np.arange(100, dtype=np.float16)
     # arrs = [arr for _ in range(100000)]
 
+    # compare with Rust's zero-copy deserialization
+    # arr = np.zeros((1024, 2048), dtype=np.float16)
+    # arrs = [arr for _ in range(10)]
+
     print(f"Running benchmarks with {iterations} iterations each...")
 
     serialize_avg = bench_serialize(arrs, iterations)

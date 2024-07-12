@@ -8,7 +8,7 @@ license = "MIT"
 homepage = "https://github.com/clearviewai/msgpack-numpy-rs"
 repository = "https://github.com/clearviewai/msgpack-numpy-rs"
 readme = "README.md"
-keywords = ["msgpack", "numpy", "serde", "serialization", "deserialization", "ndarray"]
+keywords = ["msgpack", "numpy", "serde", "serialization", "ndarray"]
 categories = ["encoding", "science"]
 
 [dependencies]

@@ -1,9 +1,9 @@
 use ctor::ctor;
 use half::f16;
-use msgpack_numpy::{NDArray, Scalar};
+use msgpack_numpy::{CowNDArray, NDArray, Scalar};
 use ndarray::{arr1, arr2, arr3, Array1};
 use rstest::rstest;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
 
@@ -21,10 +21,14 @@ fn setup() {
     println!("Setup completed.");
 }
 
-fn deserialize<T: Serialize + for<'de> Deserialize<'de>>(filepath: &str) -> T {
+fn read_file(filepath: &str) -> Vec<u8> {
     let mut file = File::open(filepath).unwrap();
     let mut buf = Vec::new();
     file.read_to_end(&mut buf).unwrap();
+    buf
+}
+
+fn deserialize<'a, T: Deserialize<'a>>(buf: &'a [u8]) -> T {
     rmp_serde::from_slice(&buf).unwrap()
 }
 
@@ -47,7 +51,8 @@ fn deserialize<T: Serialize + for<'de> Deserialize<'de>>(filepath: &str) -> T {
 #[case("scalar_unicode_string.msgpack", Scalar::Unsupported)] // 'U'
 fn test_scalar_deserialization(#[case] filename: &str, #[case] expected: Scalar) {
     let filepath = format!("{DATA_DIR}/{filename}");
-    let deserialized: Scalar = deserialize(&filepath);
+    let serialized = read_file(&filepath);
+    let deserialized: Scalar = deserialize(&serialized);
 
     match (deserialized, expected) {
         (Scalar::Bool(a), Scalar::Bool(b)) => assert_eq!(a, b),
@@ -87,27 +92,27 @@ where
 
 #[rstest]
 // Boolean
-#[case("ndarray_bool.msgpack", NDArray::Bool(arr1(&[true, false, true, true, false]).into_dyn()))]
+#[case("ndarray_bool.msgpack", NDArray::Bool(arr1(&[true, false, true, true, false]).into_dyn().into()))]
 // Unsigned integers
-#[case("ndarray_uint8.msgpack", NDArray::U8(arr1(&[0, 1, 255, 128, 254]).into_dyn()))]
-#[case("ndarray_uint16.msgpack", NDArray::U16(arr1(&[0, 1, 65535, 32768, 65534]).into_dyn()))]
-#[case("ndarray_uint32.msgpack", NDArray::U32(arr1(&[0, 1, 4294967295, 2147483648, 4294967294]).into_dyn()))]
-#[case("ndarray_uint64.msgpack", NDArray::U64(arr1(&[0, 1, 18446744073709551615, 9223372036854775808, 18446744073709551614]).into_dyn()))]
+#[case("ndarray_uint8.msgpack", NDArray::U8(arr1(&[0, 1, 255, 128, 254]).into_dyn().into()))]
+#[case("ndarray_uint16.msgpack", NDArray::U16(arr1(&[0, 1, 65535, 32768, 65534]).into_dyn().into()))]
+#[case("ndarray_uint32.msgpack", NDArray::U32(arr1(&[0, 1, 4294967295, 2147483648, 4294967294]).into_dyn().into()))]
+#[case("ndarray_uint64.msgpack", NDArray::U64(arr1(&[0, 1, 18446744073709551615, 9223372036854775808, 18446744073709551614]).into_dyn().into()))]
 // Signed integers
-#[case("ndarray_int8.msgpack", NDArray::I8(arr1(&[-128, -1, 0, 1, 127]).into_dyn()))]
-#[case("ndarray_int16.msgpack", NDArray::I16(arr1(&[-32768, -1, 0, 1, 32767]).into_dyn()))]
-#[case("ndarray_int32.msgpack", NDArray::I32(arr1(&[-2147483648, -1, 0, 1, 2147483647]).into_dyn()))]
-#[case("ndarray_int64.msgpack", NDArray::I64(arr1(&[-9223372036854775808, -1, 0, 1, 9223372036854775807]).into_dyn()))]
+#[case("ndarray_int8.msgpack", NDArray::I8(arr1(&[-128, -1, 0, 1, 127]).into_dyn().into()))]
+#[case("ndarray_int16.msgpack", NDArray::I16(arr1(&[-32768, -1, 0, 1, 32767]).into_dyn().into()))]
+#[case("ndarray_int32.msgpack", NDArray::I32(arr1(&[-2147483648, -1, 0, 1, 2147483647]).into_dyn().into()))]
+#[case("ndarray_int64.msgpack", NDArray::I64(arr1(&[-9223372036854775808, -1, 0, 1, 9223372036854775807]).into_dyn().into()))]
 // Floating point numbers
-#[case("ndarray_float16.msgpack", NDArray::F16(arr1(&[f16::from_f32(0.0), f16::from_f32(1.0), f16::from_f32(-1.0), f16::from_f32(65504.0), f16::from_f32(-65504.0)]).into_dyn()))]
-#[case("ndarray_float32.msgpack", NDArray::F32(arr1(&[0.0, 1.0, -1.0, f32::MAX, f32::MIN, f32::INFINITY, f32::NEG_INFINITY, f32::NAN]).into_dyn()))]
-#[case("ndarray_float64.msgpack", NDArray::F64(arr1(&[0.0, 1.0, -1.0, f64::MAX, f64::MIN, f64::INFINITY, f64::NEG_INFINITY, f64::NAN]).into_dyn()))]
+#[case("ndarray_float16.msgpack", NDArray::F16(arr1(&[f16::from_f32(0.0), f16::from_f32(1.0), f16::from_f32(-1.0), f16::from_f32(65504.0), f16::from_f32(-65504.0)]).into_dyn().into()))]
+#[case("ndarray_float32.msgpack", NDArray::F32(arr1(&[0.0, 1.0, -1.0, f32::MAX, f32::MIN, f32::INFINITY, f32::NEG_INFINITY, f32::NAN]).into_dyn().into()))]
+#[case("ndarray_float64.msgpack", NDArray::F64(arr1(&[0.0, 1.0, -1.0, f64::MAX, f64::MIN, f64::INFINITY, f64::NEG_INFINITY, f64::NAN]).into_dyn().into()))]
 // Multidimensional arrays
-#[case("ndarray_2d_int32.msgpack", NDArray::I32(arr2(&[[1, 2], [3, 4], [5, 6]]).into_dyn()))]
-#[case("ndarray_2d_float32.msgpack", NDArray::F32(arr3(&[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]]).into_dyn()))]
+#[case("ndarray_2d_int32.msgpack", NDArray::I32(arr2(&[[1, 2], [3, 4], [5, 6]]).into_dyn().into()))]
+#[case("ndarray_2d_float32.msgpack", NDArray::F32(arr3(&[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]]).into_dyn().into()))]
 // others
-#[case("ndarray_large_i32s.msgpack", NDArray::I32(Array1::from_iter(0..1000000).into_dyn()))]
-#[case("ndarray_repeating_i32s.msgpack", NDArray::I32(Array1::from_iter((0..10).cycle().take(10000)).into_dyn()))]
+#[case("ndarray_large_i32s.msgpack", NDArray::I32(Array1::from_iter(0..1000000).into_dyn().into()))]
+#[case("ndarray_repeating_i32s.msgpack", NDArray::I32(Array1::from_iter((0..10).cycle().take(10000)).into_dyn().into()))]
 // unsupported but can be deserialized by this crate
 #[case("ndarray_complex64.msgpack", NDArray::Unsupported)] // 'c'
 #[case("ndarray_bytestring.msgpack", NDArray::Unsupported)] // 'S'
@@ -116,7 +121,8 @@ where
 #[case("ndarray_tuple_int32.msgpack", NDArray::Unsupported)] // 'V'
 fn test_ndarray_deserialization(#[case] filename: &str, #[case] expected: NDArray) {
     let filepath = format!("{DATA_DIR}/{filename}");
-    let deserialized = deserialize(&filepath);
+    let serialized = read_file(&filepath);
+    let deserialized: NDArray = deserialize(&serialized);
 
     match (deserialized, expected) {
         (NDArray::Bool(a), NDArray::Bool(b)) => assert_eq!(a, b),
@@ -147,6 +153,73 @@ fn test_ndarray_deserialization(#[case] filename: &str, #[case] expected: NDArra
             });
         }
         (NDArray::Unsupported, NDArray::Unsupported) => (),
+        _ => panic!("Mismatched types for {}", filename),
+    }
+}
+
+#[rstest]
+// Boolean
+#[case("ndarray_bool.msgpack", CowNDArray::Bool(arr1(&[true, false, true, true, false]).into_dyn().into()))]
+// Unsigned integers
+#[case("ndarray_uint8.msgpack", CowNDArray::U8(arr1(&[0, 1, 255, 128, 254]).into_dyn().into()))]
+#[case("ndarray_uint16.msgpack", CowNDArray::U16(arr1(&[0, 1, 65535, 32768, 65534]).into_dyn().into()))]
+#[case("ndarray_uint32.msgpack", CowNDArray::U32(arr1(&[0, 1, 4294967295, 2147483648, 4294967294]).into_dyn().into()))]
+#[case("ndarray_uint64.msgpack", CowNDArray::U64(arr1(&[0, 1, 18446744073709551615, 9223372036854775808, 18446744073709551614]).into_dyn().into()))]
+// Signed integers
+#[case("ndarray_int8.msgpack", CowNDArray::I8(arr1(&[-128, -1, 0, 1, 127]).into_dyn().into()))]
+#[case("ndarray_int16.msgpack", CowNDArray::I16(arr1(&[-32768, -1, 0, 1, 32767]).into_dyn().into()))]
+#[case("ndarray_int32.msgpack", CowNDArray::I32(arr1(&[-2147483648, -1, 0, 1, 2147483647]).into_dyn().into()))]
+#[case("ndarray_int64.msgpack", CowNDArray::I64(arr1(&[-9223372036854775808, -1, 0, 1, 9223372036854775807]).into_dyn().into()))]
+// Floating point numbers
+#[case("ndarray_float16.msgpack", CowNDArray::F16(arr1(&[f16::from_f32(0.0), f16::from_f32(1.0), f16::from_f32(-1.0), f16::from_f32(65504.0), f16::from_f32(-65504.0)]).into_dyn().into()))]
+#[case("ndarray_float32.msgpack", CowNDArray::F32(arr1(&[0.0, 1.0, -1.0, f32::MAX, f32::MIN, f32::INFINITY, f32::NEG_INFINITY, f32::NAN]).into_dyn().into()))]
+#[case("ndarray_float64.msgpack", CowNDArray::F64(arr1(&[0.0, 1.0, -1.0, f64::MAX, f64::MIN, f64::INFINITY, f64::NEG_INFINITY, f64::NAN]).into_dyn().into()))]
+// Multidimensional arrays
+#[case("ndarray_2d_int32.msgpack", CowNDArray::I32(arr2(&[[1, 2], [3, 4], [5, 6]]).into_dyn().into()))]
+#[case("ndarray_2d_float32.msgpack", CowNDArray::F32(arr3(&[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]]).into_dyn().into()))]
+// others
+#[case("ndarray_large_i32s.msgpack", CowNDArray::I32(Array1::from_iter(0..1000000).into_dyn().into()))]
+#[case("ndarray_repeating_i32s.msgpack", CowNDArray::I32(Array1::from_iter((0..10).cycle().take(10000)).into_dyn().into()))]
+// unsupported but can be deserialized by this crate
+#[case("ndarray_complex64.msgpack", CowNDArray::Unsupported)] // 'c'
+#[case("ndarray_bytestring.msgpack", CowNDArray::Unsupported)] // 'S'
+#[case("ndarray_unicode_string.msgpack", CowNDArray::Unsupported)] // 'U'
+#[case("ndarray_object.msgpack", CowNDArray::Unsupported)] // 'O'
+#[case("ndarray_tuple_int32.msgpack", CowNDArray::Unsupported)] // 'V'
+fn test_cowndarray_deserialization(#[case] filename: &str, #[case] expected: CowNDArray) {
+    let filepath = format!("{DATA_DIR}/{filename}");
+    let serialized = read_file(&filepath);
+    let deserialized = deserialize(&serialized);
+
+    match (deserialized, expected) {
+        (CowNDArray::Bool(a), CowNDArray::Bool(b)) => assert_eq!(a, b),
+        (CowNDArray::U8(a), CowNDArray::U8(b)) => assert_eq!(a, b),
+        (CowNDArray::U16(a), CowNDArray::U16(b)) => assert_eq!(a, b),
+        (CowNDArray::U32(a), CowNDArray::U32(b)) => assert_eq!(a, b),
+        (CowNDArray::U64(a), CowNDArray::U64(b)) => assert_eq!(a, b),
+        (CowNDArray::I8(a), CowNDArray::I8(b)) => assert_eq!(a, b),
+        (CowNDArray::I16(a), CowNDArray::I16(b)) => assert_eq!(a, b),
+        (CowNDArray::I32(a), CowNDArray::I32(b)) => assert_eq!(a, b),
+        (CowNDArray::I64(a), CowNDArray::I64(b)) => assert_eq!(a, b),
+        (CowNDArray::F16(a), CowNDArray::F16(b)) => {
+            assert_eq!(a.shape(), b.shape());
+            a.iter().zip(b.iter()).for_each(|(x, y)| {
+                assert_float_eq(x.to_f32(), y.to_f32());
+            });
+        }
+        (CowNDArray::F32(a), CowNDArray::F32(b)) => {
+            assert_eq!(a.shape(), b.shape());
+            a.iter().zip(b.iter()).for_each(|(x, y)| {
+                assert_float_eq(*x, *y);
+            });
+        }
+        (CowNDArray::F64(a), CowNDArray::F64(b)) => {
+            assert_eq!(a.shape(), b.shape());
+            a.iter().zip(b.iter()).for_each(|(x, y)| {
+                assert_float_eq(*x, *y);
+            });
+        }
+        (CowNDArray::Unsupported, CowNDArray::Unsupported) => (),
         _ => panic!("Mismatched types for {}", filename),
     }
 }
