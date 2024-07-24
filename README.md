@@ -4,7 +4,7 @@
 [![Docs.rs](https://docs.rs/msgpack-numpy/badge.svg)](https://docs.rs/msgpack-numpy)
 [![License](https://img.shields.io/crates/l/msgpack-numpy)](#license)
 
-This crate does what Python's [msgpack-numpy](https://github.com/lebedov/msgpack-numpy/) does in Rust, and a lot [faster](#benchmarks). It serializes and deserializes NumPy scalars and arrays to and from the [MessagePack](https://msgpack.org/) format, in the same deserialized formats as the Python counterpart, so they could interoperate with each other. It enables processing NumPy arrays from a different service in Rust through IPC, or saving Machine Learning results to disk (better paired with compression).
+This crate does what Python's [msgpack-numpy](https://github.com/lebedov/msgpack-numpy/) does in Rust, and a lot [faster](#benchmarks). It serializes and deserializes NumPy scalars and arrays to and from the [MessagePack](https://msgpack.org/) format, in the same serialized formats as the Python counterpart, so they could interoperate with each other. It enables processing NumPy arrays in a different service in Rust through IPC, or saving Machine Learning results to disk (better paired with compression).
 
 ## Overview
 
@@ -13,7 +13,7 @@ This crate does what Python's [msgpack-numpy](https://github.com/lebedov/msgpack
 * However, during deserialization, we allow unsupported types to be deserialized as the `Unsupported` variant. This ensures deserialization can continue and the supported portions of data can be used.
 * Scalars and arrays are represented as separate types, each of which being an enum of different element type variants. They come with convenient conversion methods (backed by the [`num-traits`](https://crates.io/crates/num-traits) crate) to the desired target primitive types. Example: `f16`, `f32`, `f64` can all be converted to `f64`, or `f16` with loss. This allows flexibility during deserialization, without explicit pattern matching and conditional conversion. It would be similar to NumPy's `.astype(np.float64)` / `.astype(np.float16)`. Notably, `bool` is convertible to numeric types as `(0, 1)`, but not from numeric types using these methods. Of course, you can do your own conversion after matching with the `Bool` variant.
 * Arrays use the [`ndarray`](https://crates.io/crates/ndarray) crate, and have dynamic shapes. This enables users to leverage Rust's numeric [ecosystem](https://docs.rs/ndarray/latest/ndarray/index.html#the-ndarray-ecosystem) for the deserialized arrays.
-* Array handling using `CowNDArray` could be zero-copy when array buffers in the serialized slice have good alignment (although MessagePack doesn't guarantee this all the time).
+* Array handling using `CowNDArray` could be zero-copy when array buffers in the serialized slice have good alignment, although MessagePack doesn't guarantee this.
 * It depends on [`serde`](https://crates.io/crates/serde). In addition, it makes sense to use a correct MessagePack implementation, such as [`rmp-serde`](https://crates.io/crates/rmp-serde), which is used in the examples below, although it doesn't need to be a dependency, due to `serde`'s design.
 
 ## Motivation
@@ -22,7 +22,7 @@ There hasn't been consensus on a good format that is both flexible and efficient
 
 If one looks for a more production-oriented, performant format, they might consider [Apache Arrow](https://arrow.apache.org/), [Parquet](https://parquet.apache.org/), or [Protocol Buffers](https://protobuf.dev/). However, these formats are not as flexible as MessagePack when you need to store intermediate Machine Learning results. In practice, MessagePack with Numpy array support can be quite a good choice for many of these use cases.
 
-This Rust version aims to provide a faster alternative to the Python version, with the same deserialized formats as the Python counterpart so they could interoperate with each other. You could use this as a building block for your own Machine Learning pipeline in Rust, or as a way to communicate between Python and Rust.
+This Rust version aims to provide a faster alternative to the Python version, with the same serialized formats as the Python counterpart so they could interoperate with each other. You could use this as a building block for your own Machine Learning pipeline in Rust, or as a way to communicate between Python and Rust.
 
 ## Examples
 

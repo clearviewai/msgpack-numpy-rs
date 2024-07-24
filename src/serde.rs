@@ -656,7 +656,7 @@ fn create_cowndarray_from_transmution<T: Clone>(
     data: &[u8],
     shape: IxDyn,
 ) -> Result<CowArray<T, IxDyn>, NDArrayError> {
-    let transmuted: Cow<[T]> = unsafe { transmute_slice(data) }.ok_or_else(|| {
+    let transmuted = unsafe { transmute_slice(data) }.ok_or_else(|| {
         NDArrayError::InvalidDataLength(format!(
             "Invalid data length for {} transmutation",
             std::any::type_name::<T>()
