@@ -1,6 +1,6 @@
 [package]
 name = "msgpack-numpy"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Terence Liu terence.liu@clearview.ai>"]
 description = "A Rust implementation of msgpack-numpy for de-/serializing NumPy scalars and arrays that matches the Python implementation"
