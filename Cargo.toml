@@ -12,19 +12,18 @@ keywords = ["msgpack", "numpy", "serde", "serialization", "ndarray"]
 categories = ["encoding", "science"]
 
 [dependencies]
-anyhow = "1"
-half = "2"
-ndarray = "0.15"
-num-traits = "0.2"
-serde = { version = "1", features = ["derive"] }
-thiserror = "1"
-rmp-serde = "1.3"
-serde_bytes = "0.11"
+anyhow = "^1"
+thiserror = "^1"
+half = { version = "^2", features = ["num-traits"] }
+num-traits = ">=0.2, <1"
+ndarray = ">=0.15, <1"
+serde = { version = "^1", features = ["derive"] }
+serde_bytes = ">=0.11, <1"
+rmp-serde = "^1.1"
 
 [dev-dependencies]
-rmp-serde = "1.3"
-ctor = "0.2"
-rstest = "0.21"
+ctor = ">=0.2, <1"
+rstest = ">=0.21, <1"
 
 [[bin]]
 name = "test_helpers_serialize"

@@ -46,9 +46,8 @@ impl Scalar {
         self.to()
     }
 
-    // f16 doesn't implement NumCast, so we need to convert it to f32 first
     pub fn to_f16(&self) -> Option<f16> {
-        self.to::<f32>().map(f16::from_f32)
+        self.to()
     }
 
     pub fn to_u32(&self) -> Option<u32> {
@@ -83,8 +82,7 @@ impl Scalar {
             Scalar::I8(v) => NumCast::from(*v),
             Scalar::U16(v) => NumCast::from(*v),
             Scalar::I16(v) => NumCast::from(*v),
-            // f16 doesn't implement ToPrimitive, so we need to convert it to f32 first
-            Scalar::F16(v) => NumCast::from(v.to_f32()),
+            Scalar::F16(v) => NumCast::from(*v),
             Scalar::U32(v) => NumCast::from(*v),
             Scalar::I32(v) => NumCast::from(*v),
             Scalar::F32(v) => NumCast::from(*v),
@@ -158,14 +156,7 @@ impl NDArray {
     pub fn into_f16_array(self) -> Option<Array<f16, IxDyn>> {
         match self {
             NDArray::F16(arr) => Some(arr),
-            // round trip through f32 if not already f16
-            _ => self.convert_into::<f32>().map(|arr| {
-                Array::from_shape_vec(
-                    arr.raw_dim(),
-                    arr.into_iter().map(f16::from_f32).collect::<Vec<_>>(),
-                )
-                .unwrap()
-            }),
+            _ => self.convert_into::<f16>(),
         }
     }
 
@@ -218,7 +209,7 @@ impl NDArray {
             NDArray::I8(arr) => Self::convert_array(arr),
             NDArray::U16(arr) => Self::convert_array(arr),
             NDArray::I16(arr) => Self::convert_array(arr),
-            NDArray::F16(arr) => Self::convert_f16_array(arr),
+            NDArray::F16(arr) => Self::convert_array(arr),
             NDArray::U32(arr) => Self::convert_array(arr),
             NDArray::I32(arr) => Self::convert_array(arr),
             NDArray::F32(arr) => Self::convert_array(arr),
@@ -244,15 +235,6 @@ impl NDArray {
         let raw_dim = arr.raw_dim();
         arr.into_iter()
             .map(|v| NumCast::from(v as u8).ok_or(()))
-            .collect::<Result<Vec<_>, _>>()
-            .ok()
-            .map(|vec| Array::from_shape_vec(raw_dim, vec).unwrap())
-    }
-
-    fn convert_f16_array<T: NumCast>(arr: Array<f16, IxDyn>) -> Option<Array<T, IxDyn>> {
-        let raw_dim = arr.raw_dim();
-        arr.into_iter()
-            .map(|v| NumCast::from(v.to_f32()).ok_or(()))
             .collect::<Result<Vec<_>, _>>()
             .ok()
             .map(|vec| Array::from_shape_vec(raw_dim, vec).unwrap())
@@ -322,14 +304,7 @@ impl<'a> CowNDArray<'a> {
         match self {
             CowNDArray::F16(arr) => Some(arr),
             // round trip through f32 if not already f16
-            _ => self.convert_into::<f32>().map(|arr| {
-                Array::from_shape_vec(
-                    arr.raw_dim(),
-                    arr.into_iter().map(f16::from_f32).collect::<Vec<_>>(),
-                )
-                .unwrap()
-                .into()
-            }),
+            _ => self.convert_into::<f16>(),
         }
     }
 
@@ -382,7 +357,7 @@ impl<'a> CowNDArray<'a> {
             CowNDArray::I8(arr) => Self::convert_array(arr),
             CowNDArray::U16(arr) => Self::convert_array(arr),
             CowNDArray::I16(arr) => Self::convert_array(arr),
-            CowNDArray::F16(arr) => Self::convert_f16_array(arr),
+            CowNDArray::F16(arr) => Self::convert_array(arr),
             CowNDArray::U32(arr) => Self::convert_array(arr),
             CowNDArray::I32(arr) => Self::convert_array(arr),
             CowNDArray::F32(arr) => Self::convert_array(arr),
@@ -408,15 +383,6 @@ impl<'a> CowNDArray<'a> {
         let raw_dim = arr.raw_dim();
         arr.into_iter()
             .map(|v| NumCast::from(v as u8).ok_or(()))
-            .collect::<Result<Vec<_>, _>>()
-            .ok()
-            .map(|vec| Array::from_shape_vec(raw_dim, vec).unwrap().into())
-    }
-
-    fn convert_f16_array<T: NumCast>(arr: CowArray<f16, IxDyn>) -> Option<CowArray<T, IxDyn>> {
-        let raw_dim = arr.raw_dim();
-        arr.into_iter()
-            .map(|v| NumCast::from(v.to_f32()).ok_or(()))
             .collect::<Result<Vec<_>, _>>()
             .ok()
             .map(|vec| Array::from_shape_vec(raw_dim, vec).unwrap().into())
