@@ -541,15 +541,15 @@ use ndarray::{ArrayView, CowArray};
 
 // impl Deserialize
 
-impl<'de> Deserialize<'de> for CowNDArray<'de> {
+impl<'de: 'a, 'a> Deserialize<'de> for CowNDArray<'a> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        struct NDArrayVisitor;
+        struct NDArrayVisitor<'a>(std::marker::PhantomData<&'a ()>);
 
-        impl<'de> Visitor<'de> for NDArrayVisitor {
-            type Value = CowNDArray<'de>;
+        impl<'de: 'a, 'a> Visitor<'de> for NDArrayVisitor<'a> {
+            type Value = CowNDArray<'a>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a numpy array in msgpack format")
@@ -561,9 +561,9 @@ impl<'de> Deserialize<'de> for CowNDArray<'de> {
             {
                 let mut nd: Option<bool> = None;
                 let mut numpy_dtype: Option<DType> = None;
-                let mut kind: Option<&'de Bytes> = None;
+                let mut kind: Option<&'a Bytes> = None;
                 let mut shape: Option<Vec<usize>> = None;
-                let mut data: Option<&'de Bytes> = None;
+                let mut data: Option<&'a Bytes> = None;
 
                 while let Some(key) = map.next_key()? {
                     match key {
@@ -648,7 +648,7 @@ impl<'de> Deserialize<'de> for CowNDArray<'de> {
             }
         }
 
-        deserializer.deserialize_map(NDArrayVisitor)
+        deserializer.deserialize_map(NDArrayVisitor(std::marker::PhantomData))
     }
 }
 
