@@ -93,7 +93,45 @@ If you really want complete zero-copy deserialization, you should try some other
 
 ## Notes
 
+### `Scalar` Type
+
 There is not a good reason to serialize using `Scalar`, because you end up representing primitive types with a lot of metadata. This type exists for compatibility reasons - it helps deserialize scalars already serialized this way.
+
+### Dependency on `ndarray`
+
+This crate uses types from `ndarray` in its public API. `ndarray` is re-exported in the crate root so that you do not need to specify it as a direct dependency.
+
+Furthermore, this crate is compatible with multiple versions of `ndarray` and therefore depends on a range of semver-incompatible versions, currently `>=0.15, <0.17`. Cargo does not automatically choose a single version of `ndarray` by itself if you depend directly or indirectly on anything but that exact range. In other words, this crate will get `0.16.1` as its own, separate dependency, even if you pin `ndarray` to `0.15.6` in your own project. This might come as a surprise, and you will get compilation errors like:
+
+```text
+     = note: `ArrayBase<CowRepr<'_, f32>, Dim<IxDynImpl>>` and `ArrayBase<CowRepr<'_, f32>, Dim<IxDynImpl>>` have similar names, but are actually distinct types
+note: `ArrayBase<CowRepr<'_, f32>, Dim<IxDynImpl>>` is defined in crate `ndarray`
+    --> /home/ubuntu/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ndarray-0.15.6/src/lib.rs:1268:1
+     |
+1268 | pub struct ArrayBase<S, D>
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: `ArrayBase<CowRepr<'_, f32>, Dim<IxDynImpl>>` is defined in crate `ndarray`
+    --> /home/ubuntu/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ndarray-0.16.1/src/lib.rs:1280:1
+     |
+1280 | pub struct ArrayBase<S, D>
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = note: perhaps two different versions of crate `ndarray` are being used?
+```
+
+It can therefore be necessary to manually unify these dependencies. For example, if you specify the following dependencies
+
+```
+msgpack-numpy = "0.1.3"
+ndarray = "0.15.6"
+```
+
+this will currently depend on both version `0.15.6` and `0.16.1` of `ndarray` by default even though `0.15.6` is within the range `>=0.15, <0.17`. To fix this, you can run
+
+```
+cargo update --package ndarray:0.16.1 --precise 0.15.6
+```
+
+to achieve a single dependency on version `0.15.6` of ndarray. Check your lock file to verify that this worked.
 
 ## License
 This project is licensed under the MIT license.
