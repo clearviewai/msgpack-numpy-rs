@@ -101,7 +101,7 @@ There is not a good reason to serialize using `Scalar`, because you end up repre
 
 This crate uses types from `ndarray` in its public API. `ndarray` is re-exported in the crate root so that you do not need to specify it as a direct dependency.
 
-Furthermore, this crate is compatible with multiple versions of `ndarray` and therefore depends on a range of semver-incompatible versions, currently `>=0.15, <0.17`. Cargo does not automatically choose a single version of `ndarray` by itself if you depend directly or indirectly on anything but that exact range. In other words, this crate will get `0.16.1` as its own, separate dependency, even if you pin `ndarray` to `0.15.6` in your own project. This might come as a surprise, and you will get compilation errors like:
+Furthermore, this crate is compatible with multiple versions of `ndarray` and therefore depends on a range of semver-incompatible versions, currently `>=0.15, <0.17`. Cargo does not automatically choose a single version of `ndarray` by itself if you depend directly or indirectly on anything but that exact range. For example, as of Aug, 2024, this crate may get `0.16.1` as its own, separate dependency, even if you pin `ndarray` to `0.15.6` in your own project. This might come as a surprise, and you will get compilation errors like:
 
 ```text
      = note: `ArrayBase<CowRepr<'_, f32>, Dim<IxDynImpl>>` and `ArrayBase<CowRepr<'_, f32>, Dim<IxDynImpl>>` have similar names, but are actually distinct types
@@ -131,7 +131,7 @@ this will currently depend on both version `0.15.6` and `0.16.1` of `ndarray` by
 cargo update --package ndarray:0.16.1 --precise 0.15.6
 ```
 
-to achieve a single dependency on version `0.15.6` of ndarray. Check your lock file to verify that this worked.
+to achieve a single dependency on version `0.15.6` of `ndarray`. Check your lock file to verify that this worked.
 
 ## License
 This project is licensed under the MIT license.
